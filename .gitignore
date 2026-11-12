@@ -218,3 +218,25 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# ---- nl2sql-spider project rules ----
+# Spider data (download with: python data_utils.py download)
+data/
+*.zip
+*.sqlite
+
+# Model weights, checkpoints, caches
+checkpoints/
+*.safetensors
+*.bin
+*.pt
+hf_cache/
+wandb/
+
+# Scratch runs (run names starting with "_" are never committed)
+results/_*/
+
+# OS / editor
+.DS_Store
+.vscode/
+.idea/

@@ -1,0 +1,11 @@
+# Core (all parts)
+torch>=2.1
+transformers>=4.56
+accelerate>=0.30
+gdown>=5.0          # Spider download from Google Drive
+matplotlib>=3.7     # results plots
+
+# Optional
+bitsandbytes>=0.43  # 4-bit loading of 7B models (Linux + NVIDIA GPU only)
+pytest>=7           # python -m pytest tests/
+# Part 4 (LoRA) will add: peft, trl, datasets
