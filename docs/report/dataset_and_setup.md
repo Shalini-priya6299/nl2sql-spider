@@ -89,8 +89,8 @@ questionable gold.
 
 Schema linking is the main failure, and 8 of these 12 are queries that do not execute at all
 (e.g. a column taken from the wrong table alias: `SELECT T1.Title ... FROM singer AS T1 JOIN song AS T2`,
-where `Title` belongs to `song`). Such errors return an explicit SQLite message, which suggests that
-execution feedback (E3/E5) can fix many of them. The most common error on hard and extra-hard queries is missing nesting
+where `Title` belongs to `song`). These errors provide explicit SQLite feedback and motivate evaluating whether
+execution feedback (E3/E5) can correct schema-linking mistakes. The most common error on hard and extra-hard queries is missing nesting
 or set operations (4 of the 8 hard/extra errors that are not schema linking): for "citizenships shared by singers born before 1945 and after 1955" the model writes
 `WHERE Birth_Year < 1945 AND Birth_Year > 1955` (always empty) instead of an `INTERSECT`, and for
 "students who do not have a cat" it writes `PetType != 'cat'` instead of `NOT IN (...)`. These queries run

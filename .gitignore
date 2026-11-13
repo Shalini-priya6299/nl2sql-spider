@@ -240,3 +240,4 @@ results/_*/
 .DS_Store
 .vscode/
 .idea/
+.~lock.*#
