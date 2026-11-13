@@ -1,8 +1,5 @@
 # Report sections (Part 1): Dataset and Experimental Setup
 
-> Draft. Items marked **[TODO]** can only be filled after the E1 run (and after the
-> team confirms the shared model choice).
-
 ## 3. Dataset
 
 We use Spider 1.0 [Yu et al., 2018], a large, human-annotated, cross-domain Text-to-SQL benchmark.
@@ -34,7 +31,8 @@ experiment (including multiple self-correction rounds and several LoRA settings)
 is expensive on free GPUs. We therefore fix a balanced subset of 200 dev questions, 50 per
 difficulty level, sampled once with seed 42 (`splits/dev_subset_balanced.json`). It covers 19 of the 20 dev
 databases. All experiments are compared on this same subset. Its overall EX is a macro-average over
-difficulty levels, not an estimate of full-dev accuracy, so we also report **[TODO: E1 on full dev]**.
+difficulty levels, not an estimate of full-dev accuracy, so we also report E1 on the full dev set (63.9% EX overall vs. 60.5% on the balanced subset;
+see `results/summary.md`).
 
 ## 4. Experimental Setup
 
@@ -48,7 +46,7 @@ below) or question-specific hints are given.
 (`SELECT * FROM <table> LIMIT 3`) so the model can see value formats such as capitalisation and date
 styles. Prompts are 940–5,490 characters long (mean ≈2,100) on the evaluation subset.
 
-**Model.** **[TODO: confirm with team]** Qwen2.5-Coder-1.5B-Instruct, a small open code LLM that fits
+**Model.** Qwen2.5-Coder-1.5B-Instruct, a small open code LLM that fits
 on a free 16 GB T4 GPU in half precision. The same model is the base for few-shot (E2),
 self-correction (E3/E5) and LoRA fine-tuning (E4), so differences come from the method, not the model.
 
@@ -69,10 +67,43 @@ use the distilled test-suite databases, so our EX can be slightly higher than te
 **Error analysis.** We sample 25 incorrect E1 predictions, stratified by difficulty, and label each
 with one category adapted from DIN-SQL's error taxonomy [Pourreza & Rafiei, 2023]: schema linking,
 JOIN, GROUP BY, nesting/set operations, condition values, SELECT/output format, invalid SQL, and
-questionable gold. **[TODO: insert error_categories.md table and 2–3 examples]**
+questionable gold.
+
+**E1 results.** Accuracy drops steadily as queries get harder, and execution errors rise:
+
+| Eval set | n | Easy | Medium | Hard | Extra hard | Overall | Exec errors |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| Balanced subset | 200 | 88.0 | 64.0 | 50.0 | 40.0 | **60.5** | 18.5% |
+| Full dev | 1,034 | 82.7 | 65.5 | 51.1 | 45.2 | **63.9** | 17.7% |
+
+**E1 error categories** (25 incorrect predictions on the balanced subset, stratified by difficulty):
+
+| Category | Easy | Medium | Hard | Extra | Total |
+|---|---:|---:|---:|---:|---:|
+| Schema linking | 5 | 3 | 1 | 3 | 12 (48%) |
+| Nesting / set operations | 0 | 0 | 3 | 1 | 4 (16%) |
+| JOIN | 0 | 2 | 1 | 0 | 3 (12%) |
+| Condition values | 0 | 2 | 0 | 1 | 3 (12%) |
+| GROUP BY | 0 | 0 | 1 | 1 | 2 (8%) |
+| Questionable gold | 1 | 0 | 0 | 0 | 1 (4%) |
+
+Schema linking is the main failure, and 8 of these 12 are queries that do not execute at all
+(e.g. a column taken from the wrong table alias: `SELECT T1.Title ... FROM singer AS T1 JOIN song AS T2`,
+where `Title` belongs to `song`). Such errors return an explicit SQLite message, which suggests that
+execution feedback (E3/E5) can fix many of them. The most common error on hard and extra-hard queries is missing nesting
+or set operations (4 of the 8 hard/extra errors that are not schema linking): for "citizenships shared by singers born before 1945 and after 1955" the model writes
+`WHERE Birth_Year < 1945 AND Birth_Year > 1955` (always empty) instead of an `INTERSECT`, and for
+"students who do not have a cat" it writes `PetType != 'cat'` instead of `NOT IN (...)`. These queries run
+without error but return the wrong rows, so execution feedback alone cannot detect them. Condition-value errors
+include a wrong literal (`'US'` instead of `'US Territory'`) and a missing `IsOfficial = 'T'` filter.
+One error is arguably not a model error: "tell me about students in reverse alphabetical order" does not
+say which column to sort by, and the model's `ORDER BY last_name DESC` is a valid reading.
+Full labels and notes: `results/e1_zeroshot_Qwen2.5-Coder-1.5B-Instruct_balanced/error_analysis.csv`.
 
 **Reproducibility.** Every run saves its full configuration (model, prompt version, decoding,
 subset, git commit, library versions, GPU) together with all raw outputs and per-question
 results in `results/<run>/`.
 
-**Compute.** **[TODO: GPU type and E1 generation time from config.json]**
+**Compute.** All generation ran on a single NVIDIA Tesla T4 (16 GB, Google Colab) in half precision with batch size 8.
+E1 took 596 s for the 200-question subset (≈3.0 s/question) and 2,083 s (≈35 min, ≈2.0 s/question) for the full dev set.
+Scoring, error analysis and plots run on CPU.

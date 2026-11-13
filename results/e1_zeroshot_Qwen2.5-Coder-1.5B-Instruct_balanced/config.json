@@ -1,0 +1,30 @@
+{
+  "experiment": "E1 zero-shot",
+  "model": "Qwen/Qwen2.5-Coder-1.5B-Instruct",
+  "load_in_4bit": false,
+  "prompt_version": "zeroshot-v1",
+  "schema_format": "CREATE TABLE + sample rows",
+  "n_sample_rows": 3,
+  "decoding": {
+    "do_sample": false,
+    "max_new_tokens": 256
+  },
+  "batch_size": 8,
+  "subset": "balanced",
+  "n_examples": 200,
+  "seed": 42,
+  "git": {
+    "commit": "5cddadb211d96ae9408c23510524857ce9ae1ea1",
+    "uncommitted_changes": false
+  },
+  "versions": {
+    "python": "3.13.16",
+    "torch": "2.14.1+cu130",
+    "transformers": "5.22.1"
+  },
+  "gpu": "Tesla T4",
+  "started_at": "2026-11-13T08:41:44+00:00",
+  "generation_seconds": 596.0,
+  "finished_at": "2026-11-13T08:51:41+00:00",
+  "n_resumes": 0
+}

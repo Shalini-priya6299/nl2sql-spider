@@ -2,7 +2,7 @@
 experiment config, so results can always be traced back to the exact prompt.
 
 Part 2 (few-shot) and Part 3 (self-correction) should add their templates here
-and keep ZERO_SHOT unchanged so E1 stays reproducible.
+and keep zero_shot_messages() and ZERO_SHOT_VERSION unchanged so E1 stays reproducible.
 """
 
 from data_utils import get_schema_prompt
