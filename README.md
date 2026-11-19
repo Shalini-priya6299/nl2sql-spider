@@ -49,7 +49,9 @@ python -m pytest tests/                  # evaluator tests
 - **Output format:** every run writes `results/<run_name>/` with `config.json`, `predictions.jsonl`
   (`idx`, `pred_sql`, `raw_output`, ...), `metrics.json`, `eval_details.jsonl`. Score any
   predictions file with `python evaluate.py score results/<run>/predictions.jsonl`.
-  Run names starting with `_` are scratch runs and are not committed.
+  Only `config.json` and `metrics.json` are committed: `predictions.jsonl` and `eval_details.jsonl`
+  contain Spider questions and gold SQL (CC BY-SA 4.0) and are git-ignored, so share them via the
+  team Drive or a release asset. Run names starting with `_` are scratch runs and are not committed.
 
 ## E1: zero-shot baseline
 

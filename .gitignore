@@ -241,3 +241,8 @@ results/_*/
 .vscode/
 .idea/
 .~lock.*#
+
+# Per-question outputs contain Spider questions/gold SQL (CC BY-SA 4.0) and grow with every run.
+# Commit only config.json + metrics.json; share predictions via Drive / release assets.
+results/*/predictions.jsonl
+results/*/eval_details.jsonl
