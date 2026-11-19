@@ -1,7 +1,7 @@
 """Execution Accuracy (EX) evaluation for Spider, with per-difficulty breakdown.
 
 - Difficulty ("hardness") uses the official Spider rules (evaluation.py,
-  taoyds/spider), computed from the parsed ``sql`` field shipped in dev.json.
+  taoyds/spider), implemented in ``hardness.py`` and re-exported here.
 - EX runs predicted and gold SQL on the database and compares results with the
   same logic as the official test-suite evaluator (taoyds/test-suite-sql-eval,
   exec_eval.py): rows compared as a multiset (as a list if the gold query has
@@ -31,93 +31,11 @@ import time
 from collections import Counter, defaultdict
 from pathlib import Path
 
+from data_utils import db_path, load_split
+from hardness import HARDNESS_LEVELS, eval_hardness  # noqa: F401  (re-exported)
+
 ROOT = Path(__file__).parent
 SUBSET_FILE = ROOT / "splits" / "dev_subset_balanced.json"
-HARDNESS_LEVELS = ["easy", "medium", "hard", "extra"]
-
-# --------------------------------------------------------------------------- #
-# Official Spider hardness (copied logic from taoyds/spider evaluation.py)
-# --------------------------------------------------------------------------- #
-WHERE_OPS = ("not", "between", "=", ">", "<", ">=", "<=", "!=", "in", "like", "is", "exists")
-AGG_OPS = ("none", "max", "min", "count", "sum", "avg")
-
-
-def _has_agg(unit) -> bool:
-    return unit[0] != AGG_OPS.index("none")
-
-
-def _count_agg(units) -> int:
-    return len([u for u in units if _has_agg(u)])
-
-
-def _get_nested_sql(sql: dict) -> list:
-    nested = []
-    for cond_unit in sql["from"]["conds"][::2] + sql["where"][::2] + sql["having"][::2]:
-        if isinstance(cond_unit[3], dict):
-            nested.append(cond_unit[3])
-        if isinstance(cond_unit[4], dict):
-            nested.append(cond_unit[4])
-    for key in ("intersect", "except", "union"):
-        if sql[key] is not None:
-            nested.append(sql[key])
-    return nested
-
-
-def _count_component1(sql: dict) -> int:
-    count = 0
-    if len(sql["where"]) > 0:
-        count += 1
-    if len(sql["groupBy"]) > 0:
-        count += 1
-    if len(sql["orderBy"]) > 0:
-        count += 1
-    if sql["limit"] is not None:
-        count += 1
-    if len(sql["from"]["table_units"]) > 0:  # JOIN
-        count += len(sql["from"]["table_units"]) - 1
-    ao = sql["from"]["conds"][1::2] + sql["where"][1::2] + sql["having"][1::2]
-    count += len([t for t in ao if t == "or"])
-    cond_units = sql["from"]["conds"][::2] + sql["where"][::2] + sql["having"][::2]
-    count += len([c for c in cond_units if c[1] == WHERE_OPS.index("like")])
-    return count
-
-
-def _count_component2(sql: dict) -> int:
-    return len(_get_nested_sql(sql))
-
-
-def _count_others(sql: dict) -> int:
-    count = 0
-    agg_count = _count_agg(sql["select"][1])
-    agg_count += _count_agg(sql["where"][::2])
-    agg_count += _count_agg(sql["groupBy"])
-    if len(sql["orderBy"]) > 0:
-        agg_count += _count_agg([u[1] for u in sql["orderBy"][1] if u[1]]
-                                + [u[2] for u in sql["orderBy"][1] if u[2]])
-    agg_count += _count_agg(sql["having"])
-    if agg_count > 1:
-        count += 1
-    if len(sql["select"][1]) > 1:
-        count += 1
-    if len(sql["where"]) > 1:
-        count += 1
-    if len(sql["groupBy"]) > 1:
-        count += 1
-    return count
-
-
-def eval_hardness(sql: dict) -> str:
-    """Official Spider difficulty: 'easy' | 'medium' | 'hard' | 'extra'."""
-    c1, c2, co = _count_component1(sql), _count_component2(sql), _count_others(sql)
-    if c1 <= 1 and co == 0 and c2 == 0:
-        return "easy"
-    if (co <= 2 and c1 <= 1 and c2 == 0) or (c1 <= 2 and co < 2 and c2 == 0):
-        return "medium"
-    if ((co > 2 and c1 <= 2 and c2 == 0) or (2 < c1 <= 3 and co <= 2 and c2 == 0)
-            or (c1 <= 1 and co == 0 and c2 <= 1)):
-        return "hard"
-    return "extra"
-
 
 # --------------------------------------------------------------------------- #
 # SQL execution
@@ -151,7 +69,7 @@ def _unorder_row(row: tuple) -> tuple:
     return tuple(sorted(row, key=lambda x: str(x) + str(type(x))))
 
 
-def _quick_rej(r1, r2, order_matters: bool) -> bool:
+def _rows_match_fast(r1, r2, order_matters: bool) -> bool:
     s1 = [_unorder_row(r) for r in r1]
     s2 = [_unorder_row(r) for r in r2]
     return s1 == s2 if order_matters else set(s1) == set(s2)
@@ -178,7 +96,7 @@ def results_equal(r1: list[tuple], r2: list[tuple], order_matters: bool) -> bool
     n = len(r1[0])
     if len(r2[0]) != n:
         return False
-    if not _quick_rej(r1, r2, order_matters):
+    if not _rows_match_fast(r1, r2, order_matters):
         return False
     tab1_cols = [{row[i] for row in r1} for i in range(n)]
     for perm in _col_permutations(tab1_cols, r2):
@@ -232,8 +150,6 @@ def clean_sql(text: str) -> str:
 # Balanced dev subset
 # --------------------------------------------------------------------------- #
 def make_dev_subset(per_level: int = 50, seed: int = 42, out: Path = SUBSET_FILE) -> dict:
-    from data_utils import load_split
-
     dev = load_split("dev")
     rng = random.Random(seed)
     by_level = defaultdict(list)
@@ -254,8 +170,6 @@ def make_dev_subset(per_level: int = 50, seed: int = 42, out: Path = SUBSET_FILE
 
 def load_dev_subset(which: str = "balanced") -> list[dict]:
     """'balanced' -> fixed balanced subset; 'full' -> all 1034 dev examples."""
-    from data_utils import load_split
-
     dev = load_split("dev")
     if which == "full":
         return dev
@@ -271,8 +185,6 @@ def evaluate_predictions(preds: list[dict], timeout: float = 30.0) -> tuple[dict
 
     Returns (metrics, per_example). metrics has EX per difficulty + overall.
     """
-    from data_utils import db_path, load_split
-
     dev = load_split("dev")
     per_example = []
     for p in preds:

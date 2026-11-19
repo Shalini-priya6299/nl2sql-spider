@@ -26,6 +26,8 @@ from collections import Counter
 from functools import lru_cache
 from pathlib import Path
 
+from hardness import eval_hardness
+
 # Official Spider 1.0 release (yale-lily.github.io/spider -> Google Drive).
 SPIDER_GDRIVE_ID = "1403EGqzIDoHMdQF4c9Bkyl7dZLZ5Wt6J"
 
@@ -99,8 +101,6 @@ def db_path(db_id: str, spider_dir: Path = SPIDER_DIR) -> Path:
 
 def load_split(split: str = "dev", spider_dir: Path = SPIDER_DIR) -> list[dict]:
     """Load a split. Each example gets ``idx`` (position in the split) and ``hardness``."""
-    from evaluate import eval_hardness  # local import to avoid a cycle
-
     examples = []
     for fname in SPLIT_FILES[split]:
         with open(Path(spider_dir) / fname) as f:

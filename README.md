@@ -30,6 +30,7 @@ python -m pytest tests/                  # evaluator tests
 | File | What it gives you |
 |---|---|
 | `data_utils.py` | `load_split("train"/"dev")` (each example has `idx`, `hardness`), `get_schema_prompt(db_id)`, `db_path(db_id)`, `check_no_leakage()` |
+| `hardness.py` | `eval_hardness(sql)`: official Spider difficulty, `HARDNESS_LEVELS` (no project imports, so it cannot cause a cycle) |
 | `evaluate.py` | `execute_sql(db, sql)` → `(rows, error)`, `exec_match(db, pred, gold)`, `load_dev_subset("balanced"/"full")`, `clean_sql(raw_output)`, `score_file(predictions.jsonl)` |
 | `prompts.py` | prompt templates with version strings (add yours here, don't edit `zeroshot-v1`) |
 | `error_analysis.py` | sample incorrect predictions to a CSV for annotation, then count categories |
@@ -74,6 +75,7 @@ Writes `results/summary.md`, `results/summary.csv`, `figures/ex_by_difficulty.pn
 
 ```
 data_utils.py  evaluate.py  prompts.py        shared modules
+hardness.py                                   shared (Spider difficulty)
 run_e1_zeroshot.py                            E1
 error_analysis.py  make_results.py            analysis
 splits/dev_subset_balanced.json               fixed evaluation subset (committed)
