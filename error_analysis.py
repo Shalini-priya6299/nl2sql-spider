@@ -59,7 +59,7 @@ def sample(details_file: Path, n: int, seed: int) -> Path:
     picked.sort(key=lambda r: (HARDNESS_LEVELS.index(r["hardness"]), r["idx"]))
 
     out = details_file.parent / "error_analysis.csv"
-    with open(out, "w", newline="") as f:
+    with open(out, "w", newline="", encoding="utf-8") as f:
         w = csv.writer(f)
         w.writerow(["idx", "db_id", "hardness", "question", "gold_sql", "pred_sql", "pred_error",
                     "suggested", "category", "notes"])
@@ -73,7 +73,7 @@ def sample(details_file: Path, n: int, seed: int) -> Path:
 
 
 def summarize(csv_file: Path) -> Path:
-    with open(csv_file) as f:
+    with open(csv_file, newline="", encoding="utf-8") as f:
         rows = list(csv.DictReader(f))
     missing = [r["idx"] for r in rows if not r["category"].strip()]
     if missing:

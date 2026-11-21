@@ -6,8 +6,12 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from data_utils import db_path, load_split  # noqa: E402
-from evaluate import clean_sql, exec_match, execute_sql, results_equal  # noqa: E402
+import json  # noqa: E402
+
+import pytest  # noqa: E402
+
+from data_utils import _quote, db_path, load_split  # noqa: E402
+from evaluate import SUBSET_FILE, clean_sql, exec_match, execute_sql, results_equal  # noqa: E402
 
 DB = db_path("concert_singer")
 
@@ -39,6 +43,43 @@ def test_clean_sql():
     assert clean_sql("```sql\nSELECT *\nFROM t;\n```") == "SELECT * FROM t"
     assert clean_sql("Here is the query: SELECT a FROM t; -- done") == "SELECT a FROM t"
     assert clean_sql("```sql\nSELECT 1") == "SELECT 1"
+
+
+def test_clean_sql_edge_cases():
+    # a query that already starts with SELECT must not be cut at a later "with"
+    assert clean_sql("SELECT name FROM t WHERE note LIKE 'x with y'") == \
+        "SELECT name FROM t WHERE note LIKE 'x with y'"
+    assert clean_sql("(SELECT 1) UNION (SELECT 2)") == "(SELECT 1) UNION (SELECT 2)"
+    assert clean_sql("WITH a AS (SELECT 1) SELECT * FROM a;") == "WITH a AS (SELECT 1) SELECT * FROM a"
+    assert clean_sql("") == "" and clean_sql(None) == ""
+
+
+def test_quote_identifiers():
+    assert _quote("singer_id") == "singer_id"
+    assert _quote("Song Name") == '"Song Name"'
+    assert _quote("1st") == '"1st"'
+    assert _quote("") == '""'  # must not raise IndexError
+    assert _quote('a"b') == '"a""b"'
+
+
+def test_missing_database_raises():
+    with pytest.raises(FileNotFoundError):
+        execute_sql(db_path("no_such_db"), "SELECT 1")
+
+
+def test_empty_and_multi_statement_sql_are_errors():
+    assert execute_sql(DB, "")[0] is None
+    rows, err = execute_sql(DB, "SELECT 1; SELECT 2")
+    assert rows is None and err
+
+
+def test_balanced_subset_file():
+    sub = json.loads(SUBSET_FILE.read_text())
+    dev = load_split("dev")
+    idxs = sub["dev_indices"]
+    assert len(idxs) == len(set(idxs)) == 4 * sub["per_level"]
+    from collections import Counter
+    assert Counter(dev[i]["hardness"] for i in idxs) == {k: sub["per_level"] for k in sub["counts"]}
 
 
 def test_dev_hardness_matches_official_counts():

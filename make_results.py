@@ -42,7 +42,7 @@ def collect(results_dir: Path, runs: list[str] | None) -> list[dict]:
 
 def write_tables(rows: list[dict], results_dir: Path) -> None:
     header = ["run", "experiment", "model", "subset", "n"] + [f"EX_{l}" for l in LEVELS] + ["exec_error_rate"]
-    with open(results_dir / "summary.csv", "w", newline="") as f:
+    with open(results_dir / "summary.csv", "w", newline="", encoding="utf-8") as f:
         w = csv.writer(f)
         w.writerow(header)
         for r in rows:

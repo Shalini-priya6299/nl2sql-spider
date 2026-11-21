@@ -52,7 +52,7 @@ def download_spider(dest: str | Path = DATA_ROOT, only_dev: bool = False,
     """Download and extract Spider 1.0 into ``dest/spider_data``.
 
     only_dev=True extracts the JSON files plus only the 20 dev databases
-    (~110 MB instead of ~1.8 GB). Pass ``zip_path`` to reuse an already
+    (~150 MB instead of ~1.8 GB). Pass ``zip_path`` to reuse an already
     downloaded ``spider_data.zip``.
     """
     dest = Path(dest)
@@ -99,11 +99,26 @@ def db_path(db_id: str, spider_dir: Path = SPIDER_DIR) -> Path:
     return Path(spider_dir) / "database" / db_id / f"{db_id}.sqlite"
 
 
+def connect_readonly(db_file: str | Path) -> sqlite3.Connection:
+    """Open a SQLite database read-only (the single place all code opens Spider DBs).
+
+    Raises FileNotFoundError if the file is missing, instead of sqlite's vaguer
+    "unable to open database file". The path is turned into a proper file: URI so
+    characters such as ``?``, ``#`` or ``%`` in the path cannot break it.
+    """
+    db_file = Path(db_file)
+    if not db_file.is_file():
+        raise FileNotFoundError(f"database not found: {db_file} (run: python data_utils.py download)")
+    conn = sqlite3.connect(f"{db_file.resolve().as_uri()}?mode=ro", uri=True)
+    conn.text_factory = lambda b: b.decode("utf-8", errors="replace")
+    return conn
+
+
 def load_split(split: str = "dev", spider_dir: Path = SPIDER_DIR) -> list[dict]:
     """Load a split. Each example gets ``idx`` (position in the split) and ``hardness``."""
     examples = []
     for fname in SPLIT_FILES[split]:
-        with open(Path(spider_dir) / fname) as f:
+        with open(Path(spider_dir) / fname, encoding="utf-8") as f:
             examples.extend(json.load(f))
     for i, ex in enumerate(examples):
         ex["idx"] = i
@@ -113,7 +128,7 @@ def load_split(split: str = "dev", spider_dir: Path = SPIDER_DIR) -> list[dict]:
 
 @lru_cache(maxsize=None)
 def _load_tables(spider_dir: str) -> dict:
-    with open(Path(spider_dir) / "tables.json") as f:
+    with open(Path(spider_dir) / "tables.json", encoding="utf-8") as f:
         return {t["db_id"]: t for t in json.load(f)}
 
 
@@ -126,8 +141,12 @@ def load_schemas(spider_dir: Path = SPIDER_DIR) -> dict[str, dict]:
 # Schema -> prompt
 # --------------------------------------------------------------------------- #
 def _quote(name: str) -> str:
-    """Quote identifiers that are not plain words (spaces, keywords, etc.)."""
-    if name.replace("_", "").isalnum() and not name[0].isdigit():
+    """Quote identifiers that are not plain words (spaces, punctuation, leading digit, empty).
+
+    SQL keywords used as names are left unquoted on purpose: changing this would change
+    every prompt and invalidate the E1 results (prompt version ``zeroshot-v1``).
+    """
+    if name and name.replace("_", "").isalnum() and not name[0].isdigit():
         return name
     return '"' + name.replace('"', '""') + '"'
 
@@ -182,8 +201,7 @@ def _fmt_value(v, max_len: int = 40) -> str:
 
 
 def sample_rows(db_file: Path, table: str, n: int = 3) -> tuple[list[str], list[tuple]]:
-    conn = sqlite3.connect(f"file:{db_file}?mode=ro", uri=True)
-    conn.text_factory = lambda b: b.decode("utf-8", errors="replace")
+    conn = connect_readonly(db_file)
     try:
         cur = conn.execute(f"SELECT * FROM {_quote(table)} LIMIT {int(n)}")
         header = [d[0] for d in cur.description]
@@ -266,7 +284,7 @@ def main() -> None:
     sub = p.add_subparsers(dest="cmd", required=True)
     d = sub.add_parser("download")
     d.add_argument("--dest", default=str(DATA_ROOT))
-    d.add_argument("--only-dev", action="store_true", help="extract only dev databases (~110 MB)")
+    d.add_argument("--only-dev", action="store_true", help="extract only dev databases (~150 MB)")
     d.add_argument("--zip", default=None, help="path to an existing spider_data.zip")
     sub.add_parser("stats")
     s = sub.add_parser("show")

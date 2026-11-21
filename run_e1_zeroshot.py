@@ -126,7 +126,7 @@ def main() -> None:
     config_file = out_dir / "config.json"
     if config_file.exists():  # resumed run: keep the original settings, only add time
         old = json.loads(config_file.read_text())
-        for k in ("model", "prompt_version", "n_sample_rows", "decoding", "subset"):
+        for k in ("model", "load_in_4bit", "prompt_version", "n_sample_rows", "decoding", "subset"):
             if old.get(k) != config[k]:
                 raise SystemExit(f"{config_file} has {k}={old.get(k)!r}, this run has {config[k]!r}. "
                                  "Use a different --run-name.")
@@ -137,7 +137,7 @@ def main() -> None:
     t0 = time.time()
     if todo:
         tok, model = load_model(args.model, args.load_in_4bit)
-        with open(pred_file, "a") as f:
+        with open(pred_file, "a", encoding="utf-8") as f:
             for i in range(0, len(todo), args.batch_size):
                 batch = todo[i: i + args.batch_size]
                 raws = generate_batch(tok, model, [zero_shot_messages(e, args.n_rows) for e in batch],
@@ -152,7 +152,7 @@ def main() -> None:
     if todo:
         config["generation_seconds"] = round(config.get("generation_seconds", 0) + time.time() - t0, 1)
         config["finished_at"] = datetime.now(timezone.utc).isoformat(timespec="seconds")
-    config_file.write_text(json.dumps(config, indent=2))
+    config_file.write_text(json.dumps(config, indent=2) + "\n")
     score_file(pred_file)
 
 

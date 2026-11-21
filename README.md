@@ -81,7 +81,7 @@ hardness.py                                   shared (Spider difficulty)
 run_e1_zeroshot.py                            E1
 error_analysis.py  make_results.py            analysis
 splits/dev_subset_balanced.json               fixed evaluation subset (committed)
-results/<run>/                                predictions, configs, metrics (committed)
+results/<run>/                                config.json + metrics.json committed; predictions git-ignored
 figures/                                      plots for the report
 docs/report/                                  report section drafts
 tests/                                        evaluator tests

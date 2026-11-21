@@ -31,7 +31,7 @@ import time
 from collections import Counter, defaultdict
 from pathlib import Path
 
-from data_utils import db_path, load_split
+from data_utils import connect_readonly, db_path, load_split
 from hardness import HARDNESS_LEVELS, eval_hardness  # noqa: F401  (re-exported)
 
 ROOT = Path(__file__).parent
@@ -48,8 +48,7 @@ def execute_sql(db_file: str | Path, sql: str, timeout: float = 30.0):
     """
     if not sql or not sql.strip():
         return None, "empty query"
-    conn = sqlite3.connect(f"file:{db_file}?mode=ro", uri=True)
-    conn.text_factory = lambda b: b.decode("utf-8", errors="replace")
+    conn = connect_readonly(db_file)  # raises FileNotFoundError if the DB is missing
     deadline = time.monotonic() + timeout
     conn.set_progress_handler(lambda: int(time.monotonic() > deadline), 10_000)
     try:
@@ -139,9 +138,11 @@ def clean_sql(text: str) -> str:
         text = re.sub(r"^(sql|sqlite)\s", "", text, flags=re.I)
     text = text.strip()
     # if the model added prose first, start at the first SELECT/WITH
-    m = re.search(r"\b(SELECT|WITH)\b", text, flags=re.I)
-    if m:
-        text = text[m.start():]
+    # (leave text that already starts with a query alone: a later "with" could be a column/value)
+    if not re.match(r"\(*\s*(SELECT|WITH)\b", text, flags=re.I):
+        m = re.search(r"\b(SELECT|WITH)\b", text, flags=re.I)
+        if m:
+            text = text[m.start():]
     text = text.split(";")[0]
     return " ".join(text.split())
 
@@ -163,7 +164,7 @@ def make_dev_subset(per_level: int = 50, seed: int = 42, out: Path = SUBSET_FILE
               "counts": {lvl: per_level for lvl in HARDNESS_LEVELS},
               "dev_indices": idxs}
     out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(json.dumps(subset, indent=1))
+    out.write_text(json.dumps(subset, indent=1) + "\n")
     print(f"wrote {out} ({len(idxs)} examples)")
     return subset
 
@@ -189,6 +190,8 @@ def evaluate_predictions(preds: list[dict], timeout: float = 30.0) -> tuple[dict
     per_example = []
     for p in preds:
         ex = dev[p["idx"]]
+        if p.get("question") not in (None, ex["question"]):  # catches a stale/mismatched predictions file
+            raise ValueError(f"idx {p['idx']}: prediction question does not match dev question")
         r = exec_match(db_path(ex["db_id"]), p["pred_sql"], ex["query"], timeout)
         per_example.append({"idx": ex["idx"], "db_id": ex["db_id"], "hardness": ex["hardness"],
                             "question": ex["question"], "gold_sql": ex["query"],
@@ -220,12 +223,12 @@ def print_metrics(metrics: dict, title: str = "") -> None:
 
 
 def read_jsonl(path: str | Path) -> list[dict]:
-    with open(path) as f:
+    with open(path, encoding="utf-8") as f:
         return [json.loads(line) for line in f if line.strip()]
 
 
 def write_jsonl(path: str | Path, rows: list[dict]) -> None:
-    with open(path, "w") as f:
+    with open(path, "w", encoding="utf-8") as f:
         for r in rows:
             f.write(json.dumps(r, ensure_ascii=False) + "\n")
 
@@ -234,7 +237,7 @@ def score_file(pred_file: str | Path, timeout: float = 30.0) -> dict:
     """Score predictions.jsonl; writes metrics.json and eval_details.jsonl next to it."""
     pred_file = Path(pred_file)
     metrics, per_example = evaluate_predictions(read_jsonl(pred_file), timeout)
-    (pred_file.parent / "metrics.json").write_text(json.dumps(metrics, indent=2))
+    (pred_file.parent / "metrics.json").write_text(json.dumps(metrics, indent=2) + "\n")
     write_jsonl(pred_file.parent / "eval_details.jsonl", per_example)
     print_metrics(metrics, f"== {pred_file}")
     return metrics
