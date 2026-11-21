@@ -104,6 +104,8 @@ class RandomRetriever(BaseRetriever):
         self._rng = random.Random(seed)
 
     def retrieve(self, question: str, k: int, db_id: str | None = None) -> list[Example]:
+        if k <= 0:
+            raise ValueError(f"k must be a positive integer, got {k}")
         pool = self._filter_pool(db_id)
         k = min(k, len(pool))
         return self._rng.sample(pool, k)
@@ -138,6 +140,7 @@ class SimilarRetriever(BaseRetriever):
         cache_path: str | Path | None = None,
     ):
         super().__init__(examples)
+        self._model_name = model_name
         self._encoder = self._load_encoder(model_name)
         self._embeddings = self._build_index(batch_size, cache_path)
 
@@ -166,14 +169,27 @@ class SimilarRetriever(BaseRetriever):
         Encode all training questions into a normalised embedding matrix.
         Shape: (N, dim).  Loads from cache_path if it exists.
         """
+        meta_path: Path | None = None
         if cache_path is not None:
             cache_path = Path(cache_path)
+            meta_path = cache_path.with_name(cache_path.stem + ".meta.json")
             if cache_path.exists():
                 print(f"[retrieval] Loading embeddings from cache: {cache_path}")
                 emb = np.load(cache_path)
-                if emb.shape[0] == len(self.examples):
+                valid = emb.shape[0] == len(self.examples)
+                if valid and meta_path.exists():
+                    meta = json.loads(meta_path.read_text())
+                    if meta.get("model_name") != self._model_name:
+                        print(
+                            f"[retrieval] Cache model mismatch "
+                            f"(cached={meta.get('model_name')!r}, "
+                            f"current={self._model_name!r}) — recomputing."
+                        )
+                        valid = False
+                if valid:
                     return emb
-                print("[retrieval] Cache size mismatch — recomputing.")
+                if emb.shape[0] != len(self.examples):
+                    print("[retrieval] Cache size mismatch — recomputing.")
 
         print(f"[retrieval] Encoding {len(self.examples)} questions …")
         questions = [e.question for e in self.examples]
@@ -188,6 +204,9 @@ class SimilarRetriever(BaseRetriever):
         if cache_path is not None:
             cache_path.parent.mkdir(parents=True, exist_ok=True)
             np.save(cache_path, emb)
+            meta_path.write_text(
+                json.dumps({"model_name": self._model_name, "n_examples": len(self.examples)}, indent=2)
+            )
             print(f"[retrieval] Embeddings saved to {cache_path}")
 
         return emb  # shape (N, dim), already normalised
@@ -211,6 +230,9 @@ class SimilarRetriever(BaseRetriever):
         If db_id is given, examples from that database are excluded first,
         then similarity is computed only over the remaining pool.
         """
+        if k <= 0:
+            raise ValueError(f"k must be a positive integer, got {k}")
+
         pool_indices = (
             [i for i, e in enumerate(self.examples) if e.db_id != db_id]
             if db_id is not None

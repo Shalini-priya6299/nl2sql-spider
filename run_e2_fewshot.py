@@ -199,7 +199,7 @@ def main() -> None:
     config_file = out_dir / "config.json"
     if config_file.exists():
         old = json.loads(config_file.read_text())
-        for key in ("model", "load_in_4bit", "prompt_version", "n_sample_rows", "decoding", "subset", "retrieval"):
+        for key in ("model", "load_in_4bit", "prompt_version", "n_sample_rows", "decoding", "subset", "retrieval", "seed"):
             if old.get(key) != config[key]:
                 raise SystemExit(
                     f"{config_file} has {key}={old.get(key)!r}, this run has {config[key]!r}. "
