@@ -51,6 +51,7 @@ def test_clean_sql_edge_cases():
         "SELECT name FROM t WHERE note LIKE 'x with y'"
     assert clean_sql("(SELECT 1) UNION (SELECT 2)") == "(SELECT 1) UNION (SELECT 2)"
     assert clean_sql("WITH a AS (SELECT 1) SELECT * FROM a;") == "WITH a AS (SELECT 1) SELECT * FROM a"
+    assert clean_sql("SELECT a FROM t WHERE b = 'x;y'; SELECT 2") == "SELECT a FROM t WHERE b = 'x;y'"
     assert clean_sql("") == "" and clean_sql(None) == ""
 
 

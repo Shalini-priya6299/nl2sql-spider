@@ -126,6 +126,20 @@ def exec_match(db_file: str | Path, pred_sql: str, gold_sql: str, timeout: float
 # --------------------------------------------------------------------------- #
 # Prediction post-processing
 # --------------------------------------------------------------------------- #
+def _first_statement(text: str) -> str:
+    """Cut at the first ';' that is not inside a '...', "..." or `...` literal."""
+    quote = None
+    for i, ch in enumerate(text):
+        if quote:
+            if ch == quote:
+                quote = None
+        elif ch in "'\"`":
+            quote = ch
+        elif ch == ";":
+            return text[:i]
+    return text
+
+
 def clean_sql(text: str) -> str:
     """Extract a single SQL statement from raw model output."""
     if text is None:
@@ -143,8 +157,7 @@ def clean_sql(text: str) -> str:
         m = re.search(r"\b(SELECT|WITH)\b", text, flags=re.I)
         if m:
             text = text[m.start():]
-    text = text.split(";")[0]
-    return " ".join(text.split())
+    return " ".join(_first_statement(text).split())
 
 
 # --------------------------------------------------------------------------- #
