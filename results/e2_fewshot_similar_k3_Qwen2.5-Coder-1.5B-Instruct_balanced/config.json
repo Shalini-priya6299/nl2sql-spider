@@ -1,0 +1,35 @@
+{
+  "experiment": "E2 few-shot",
+  "model": "Qwen/Qwen2.5-Coder-1.5B-Instruct",
+  "load_in_4bit": false,
+  "prompt_version": "fewshot-v1",
+  "schema_format": "CREATE TABLE + sample rows",
+  "n_sample_rows": 3,
+  "retrieval": {
+    "strategy": "similar",
+    "k": 3,
+    "train_path": "data/spider_data/train_spider.json",
+    "cache_path": null
+  },
+  "decoding": {
+    "do_sample": false,
+    "max_new_tokens": 256
+  },
+  "batch_size": 8,
+  "subset": "balanced",
+  "n_examples": 200,
+  "seed": 42,
+  "git": {
+    "commit": null,
+    "uncommitted_changes": null
+  },
+  "versions": {
+    "python": "3.13.16",
+    "torch": "2.11.0+cu130",
+    "transformers": "5.20.2"
+  },
+  "gpu": "Tesla T4",
+  "started_at": "2026-11-22T16:36:30+00:00",
+  "generation_seconds": 633.7,
+  "finished_at": "2026-11-22T16:47:04+00:00"
+}

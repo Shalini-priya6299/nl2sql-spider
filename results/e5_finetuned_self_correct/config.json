@@ -1,0 +1,38 @@
+{
+  "experiment": "E5 fine-tuned + self-correction",
+  "model": "Qwen/Qwen2.5-Coder-1.5B-Instruct",
+  "adapter": "adapter",
+  "load_in_4bit": false,
+  "prompt_version": "zeroshot-v1",
+  "self_correct_version": "self-correct-v1",
+  "max_retries": 2,
+  "execution_timeout": 10.0,
+  "evaluation_timeout": 30.0,
+  "retry_on_empty_result": true,
+  "retrieval": null,
+  "schema_format": "CREATE TABLE + sample rows",
+  "n_sample_rows": 3,
+  "decoding": {
+    "do_sample": false,
+    "max_new_tokens": 256
+  },
+  "subset": "balanced",
+  "n_examples": 200,
+  "seed": 42,
+  "git": {
+    "commit": "33b5715cfef7239455ab7434e2b35951ad4ee147",
+    "uncommitted_changes": true
+  },
+  "versions": {
+    "python": "3.12.10",
+    "torch": "2.7.0+cpu",
+    "transformers": "4.57.6"
+  },
+  "gpu": null,
+  "started_at": "2026-11-22T09:22:50+00:00",
+  "generation_seconds": 8617.36,
+  "execution_seconds": 5.22,
+  "extra_llm_calls": 67,
+  "execution_errors_fixed": 5,
+  "finished_at": "2026-11-22T11:47:43+00:00"
+}

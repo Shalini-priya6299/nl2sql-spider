@@ -1,0 +1,32 @@
+{
+  "easy": {
+    "n": 50,
+    "correct": 44,
+    "ex": 0.88,
+    "exec_error_rate": 0.06
+  },
+  "medium": {
+    "n": 50,
+    "correct": 32,
+    "ex": 0.64,
+    "exec_error_rate": 0.16
+  },
+  "hard": {
+    "n": 50,
+    "correct": 20,
+    "ex": 0.4,
+    "exec_error_rate": 0.3
+  },
+  "extra": {
+    "n": 50,
+    "correct": 17,
+    "ex": 0.34,
+    "exec_error_rate": 0.4
+  },
+  "all": {
+    "n": 200,
+    "correct": 113,
+    "ex": 0.565,
+    "exec_error_rate": 0.23
+  }
+}
