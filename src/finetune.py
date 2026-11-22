@@ -47,7 +47,7 @@ def parse_args():
     ap.add_argument("--lr", type=float, default=2e-4)
     ap.add_argument("--batch_size", type=int, default=2, help="examples per GPU step (keep small for memory)")
     ap.add_argument("--grad_accum", type=int, default=8, help="batch_size x grad_accum = real batch size")
-    ap.add_argument("--max_len", type=int, default=1536, help="longer examples are cut (Spider schemas can be long)")
+    ap.add_argument("--max_len", type=int, default=1536, help="longer examples are dropped, not cut (Spider schemas can be long)")
     ap.add_argument("--max_steps", type=int, default=-1, help="set e.g. 20 for a quick test; -1 = train fully")
     ap.add_argument("--save_steps", type=int, default=200, help="checkpoint often: free GPU sessions disconnect")
     ap.add_argument("--resume", action="store_true", help="continue from the latest checkpoint in out_dir")
