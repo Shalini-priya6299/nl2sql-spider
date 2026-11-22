@@ -1,0 +1,31 @@
+{
+  "experiment": "E4 zero-shot, LoRA fine-tuned",
+  "model": "Qwen/Qwen2.5-Coder-1.5B-Instruct",
+  "adapter": "/content/drive/MyDrive/adapter",
+  "load_in_4bit": false,
+  "prompt_version": "zeroshot-v1",
+  "schema_format": "CREATE TABLE + sample rows",
+  "n_sample_rows": 3,
+  "decoding": {
+    "do_sample": false,
+    "max_new_tokens": 256
+  },
+  "batch_size": 8,
+  "subset": "balanced",
+  "n_examples": 200,
+  "seed": 42,
+  "git": {
+    "commit": null,
+    "uncommitted_changes": null
+  },
+  "versions": {
+    "python": "3.13.16",
+    "torch": "2.14.1+cu130",
+    "transformers": "5.22.1",
+    "peft": "0.21.2"
+  },
+  "gpu": "Tesla T4",
+  "started_at": "2026-11-22T04:16:13+00:00",
+  "generation_seconds": 495.9,
+  "finished_at": "2026-11-22T04:24:29+00:00"
+}

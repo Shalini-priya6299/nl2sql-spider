@@ -8,4 +8,7 @@ matplotlib>=3.7     # results plots
 # Optional
 bitsandbytes>=0.43  # 4-bit loading of 7B models (Linux + NVIDIA GPU only)
 pytest>=7           # python -m pytest tests/
-# Part 4 (LoRA) will add: peft, trl, datasets
+# Part 4 (LoRA fine-tuning and E4): src/finetune.py, run_e4_finetuned.py
+# (also needs accelerate above, and bitsandbytes above for the 4-bit base model)
+peft>=0.10
+datasets>=2.18

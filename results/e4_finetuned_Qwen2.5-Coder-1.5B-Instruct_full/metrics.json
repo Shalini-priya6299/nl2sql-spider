@@ -1,0 +1,32 @@
+{
+  "easy": {
+    "n": 248,
+    "correct": 220,
+    "ex": 0.8871,
+    "exec_error_rate": 0.0242
+  },
+  "medium": {
+    "n": 446,
+    "correct": 330,
+    "ex": 0.7399,
+    "exec_error_rate": 0.1054
+  },
+  "hard": {
+    "n": 174,
+    "correct": 100,
+    "ex": 0.5747,
+    "exec_error_rate": 0.1437
+  },
+  "extra": {
+    "n": 166,
+    "correct": 80,
+    "ex": 0.4819,
+    "exec_error_rate": 0.2229
+  },
+  "all": {
+    "n": 1034,
+    "correct": 730,
+    "ex": 0.706,
+    "exec_error_rate": 0.1112
+  }
+}
