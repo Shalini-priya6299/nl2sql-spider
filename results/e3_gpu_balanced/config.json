@@ -1,0 +1,43 @@
+{
+  "experiment": "E3 few-shot + self-correction",
+  "model": "Qwen/Qwen2.5-Coder-1.5B-Instruct",
+  "adapter": null,
+  "load_in_4bit": false,
+  "prompt_version": "fewshot-v1",
+  "self_correct_version": "self-correct-v1",
+  "max_retries": 2,
+  "execution_timeout": 10.0,
+  "evaluation_timeout": 30.0,
+  "retry_on_empty_result": true,
+  "retrieval": {
+    "strategy": "similar",
+    "k": 3,
+    "train_path": "data/spider_data/train_spider.json",
+    "cache_path": null
+  },
+  "schema_format": "CREATE TABLE + sample rows",
+  "n_sample_rows": 3,
+  "decoding": {
+    "do_sample": false,
+    "max_new_tokens": 256
+  },
+  "subset": "balanced",
+  "n_examples": 200,
+  "seed": 42,
+  "git": {
+    "commit": null,
+    "uncommitted_changes": null
+  },
+  "versions": {
+    "python": "3.13.16",
+    "torch": "2.14.1+cu130",
+    "transformers": "5.22.1"
+  },
+  "gpu": "Tesla T4",
+  "started_at": "2026-11-22T13:26:37+00:00",
+  "generation_seconds": 906.5,
+  "execution_seconds": 0.17,
+  "extra_llm_calls": 137,
+  "execution_errors_fixed": 15,
+  "finished_at": "2026-11-22T13:41:48+00:00"
+}

@@ -1,0 +1,34 @@
+{
+  "run": "e3_gpu_balanced",
+  "n_questions": 200,
+  "ex_before": 0.52,
+  "ex_after": 0.565,
+  "ex_by_level_before": {
+    "easy": 0.82,
+    "medium": 0.6,
+    "hard": 0.34,
+    "extra": 0.32
+  },
+  "ex_by_level_after": {
+    "easy": 0.88,
+    "medium": 0.64,
+    "hard": 0.4,
+    "extra": 0.34
+  },
+  "exec_error_rate_before": 0.305,
+  "exec_error_rate_after": 0.23,
+  "questions_retried": 75,
+  "execution_errors_fixed": 15,
+  "empty_first_result": 14,
+  "empty_first_result_correct": 5,
+  "empty_retry_broken": 0,
+  "empty_retry_fixed": 0,
+  "wrong_to_right": 9,
+  "right_to_wrong": 0,
+  "extra_llm_calls": 137,
+  "extra_calls_per_question": 0.685,
+  "total_generation_seconds": 906.5,
+  "est_extra_generation_seconds": 368.5,
+  "total_execution_seconds": 0.17,
+  "relative_llm_cost": 1.685
+}
