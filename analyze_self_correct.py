@@ -44,6 +44,15 @@ def analyze(run_dir: Path) -> dict:
     gained = sum(1 for i in init_ok if not init_ok[i] and final_ok[i])   # wrong -> right
     broken = sum(1 for i in init_ok if init_ok[i] and not final_ok[i])   # right -> wrong
 
+    # Retry-on-empty diagnostic: an empty first result can be a correct answer. Count the
+    # questions whose first SQL returned no rows, how many of those were already correct, and
+    # how many of those correct ones the retry turned into wrong answers. This bounds the harm
+    # of retry_on_empty without needing a second run with --no-retry-on-empty.
+    empty_ids = {p["idx"] for p in preds if p.get("initial_empty")}
+    empty_initial_correct = sum(1 for i in empty_ids if init_ok[i])
+    empty_broken = sum(1 for i in empty_ids if init_ok[i] and not final_ok[i])
+    empty_fixed = sum(1 for i in empty_ids if not init_ok[i] and final_ok[i])
+
     gen_s = sum(p["generation_time"] for p in preds)
     exec_s = sum(p["execution_time"] for p in preds)
     extra_calls = sum(p["extra_llm_calls"] for p in preds)
@@ -62,7 +71,11 @@ def analyze(run_dir: Path) -> dict:
         "exec_error_rate_before": initial_metrics["all"]["exec_error_rate"],
         "exec_error_rate_after": final_metrics["all"]["exec_error_rate"],
         "questions_retried": len(retried),
-        "execution_errors_fixed": fixed_errors,
+        "execution_errors_fixed": fixed_errors,  # crash -> runs only; not semantic fixes
+        "empty_first_result": len(empty_ids),
+        "empty_first_result_correct": empty_initial_correct,
+        "empty_retry_broken": empty_broken,
+        "empty_retry_fixed": empty_fixed,
         "wrong_to_right": gained,
         "right_to_wrong": broken,
         "extra_llm_calls": extra_calls,
@@ -92,8 +105,13 @@ def to_markdown(s: dict) -> str:
     lines += [
         "",
         f"- Questions retried: {s['questions_retried']}",
-        f"- Execution errors fixed: {s['execution_errors_fixed']}",
+        f"- Execution errors fixed (first SQL crashed, final SQL runs; crash-to-working only, "
+        f"not semantic fixes): {s['execution_errors_fixed']}",
         f"- Wrong -> right: {s['wrong_to_right']}; right -> wrong: {s['right_to_wrong']}",
+        f"- First SQL returned no rows: {s['empty_first_result']} "
+        f"(already correct: {s['empty_first_result_correct']}; "
+        f"correct -> wrong after retry: {s['empty_retry_broken']}; "
+        f"wrong -> right: {s['empty_retry_fixed']})",
         f"- Extra LLM calls: {s['extra_llm_calls']} ({s['extra_calls_per_question']} per question, "
         f"total LLM cost x{s['relative_llm_cost']})",
         f"- Generation time: {s['total_generation_seconds']} s total "
