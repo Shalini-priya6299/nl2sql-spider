@@ -11,7 +11,7 @@ execute-and-retry self-correction help compared with LoRA fine-tuning?
 |---|---|---|---|
 | E1 | Zero-shot, schema prompt (CREATE TABLE + 3 sample rows) | Part 1 (#1) | `run_e1_zeroshot.py` |
 | E2 | Few-shot prompting | Part 2 (#2) | _TBD_ |
-| E3, E5 | Execution feedback and self-correction | Part 3 (#3) | _TBD_ |
+| E3, E5 | Execution feedback and self-correction | Part 3 (#3) | `run_e3_self_correct.py` (E5: add `--adapter`) |
 | E4 | LoRA fine-tuning of the code LLM | Part 4 (#4) | _TBD_ |
 
 ## Setup
@@ -63,6 +63,18 @@ These are the main commands the notebook runs:
 python run_e1_zeroshot.py                     # balanced subset, Qwen2.5-Coder-1.5B-Instruct, greedy
 python run_e1_zeroshot.py --subset full       # all 1,034 dev questions
 python error_analysis.py sample results/e1_zeroshot_Qwen2.5-Coder-1.5B-Instruct_balanced/eval_details.jsonl -n 25
+```
+
+## E3 / E5: execution feedback and self-correction
+
+`executor.py` runs SQL read-only with a timeout; `self_correct.py` retries up to 2 times with the
+SQLite error as feedback. Needs a GPU, so run it on Colab:
+
+```bash
+python run_e3_self_correct.py --strategy similar --k 3          # E3: few-shot + correction
+python run_e3_self_correct.py --adapter <path>/ft_1p5b/adapter   # E5: fine-tuned (Part 4) + correction
+python analyze_self_correct.py results/<run>/ --save             # fixed queries + extra cost
+python -m pytest tests/test_self_correct.py                      # no GPU needed
 ```
 
 ## Final results
