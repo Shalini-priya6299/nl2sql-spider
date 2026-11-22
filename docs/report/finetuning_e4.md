@@ -61,9 +61,14 @@ validation loss (step 200)**: we did not select a checkpoint by validation loss,
 Stopping after about 200–400 steps might have given an equal or better adapter at a fraction of the 4.3 GPU-hours.
 We did not test this. All numbers come from a single training run with one seed (42), so we cannot give a confidence interval.
 
+![E4 training and validation loss](../../figures/e4_loss_curve.png)
+
+*Figure X. Training loss (blue) and validation loss (orange, 15 unseen databases) for the LoRA fine-tuning of
+Qwen2.5-Coder-1.5B-Instruct on Spider. Validation loss is lowest at step 200 and then rises, while training loss keeps falling.*
+
 **Evaluation.** The saved adapter (about 74 MB) is loaded on top of the base model and evaluated on the same
-balanced 200-question dev subset as E1, with the same prompt, greedy decoding and 256 new tokens. **[TODO: E4 EX by
-difficulty and execution-error rate, to compare against E1: 60.5% overall (balanced subset).]** E5 adds the
+balanced 200-question dev subset as E1, with the same prompt, greedy decoding and 256 new tokens. The results,
+compared with E1, are given below in the E4 results section. E5 adds the
 self-correction loop of Part 3 on top of this adapter.
 
 ---
